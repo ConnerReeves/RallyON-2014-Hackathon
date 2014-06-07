@@ -118,6 +118,10 @@
 								click: function(e) {
 									debugger;
 									if (this._ref) {
+										_.each(this.series.points, function(point) {
+											point.update({color: '#E6E6E6'});
+										});
+										this.update({color: '#00a9e0'});
 										self.fireEvent('iterationselected', this.name);
 									}
 								}
