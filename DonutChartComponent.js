@@ -10,6 +10,8 @@
 
 		html: '<div id="donut-chart"></div>',
 
+		bubbleEvents: ['iterationselected'],
+
 		initComponent: function() {
 			this.callParent(arguments);
 			// this.query();
@@ -65,6 +67,7 @@
 		},
 
 		_buildVisualizeConfig: function() {
+			var self = this;
 			return {
 				type: 'pie',
 				title: { text: 'Feature Donut' },
@@ -114,7 +117,7 @@
 							events: {
 								click: function(e) {
 									if (this._ref) {
-										console.log("Iteration clicked: " + this._ref);
+										self.fireEvent('iterationselected', this.name);
 									}
 								}
 							}

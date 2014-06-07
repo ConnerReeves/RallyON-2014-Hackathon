@@ -8,7 +8,11 @@ Ext.define('CustomApp', {
     activeChartIndex : 0,
 
     layout: 'border',
+
     launch: function() {
+        // Handle clicking on an iteration in the donut chart
+        this.on('iterationselected', this._updateTrendCharts, this);
+
         //Reload process
         Deft.Chain.pipeline([
             function() {
@@ -366,9 +370,19 @@ Ext.define('CustomApp', {
     },
 
     _updateTrendCharts: function(iterationName) {
+        if (this.selectedIteration && (this.selectedIteration === iterationName)) {
+            return;
+        }
+        this.selectedIteration = iterationName;
+
         if (this.trendChartUpdateProcess && this.trendChartUpdateProcess.getState() === 'pending') this.trendChartUpdateProcess.cancel();
 
         this.trendChartUpdateProcess = Deft.Chain.pipeline([
+            // Set the component to loading
+            function() {
+                Ext.getCmp('trendChartContainer').setLoading(true);
+            },
+
             //Get the iteration OIDs to filter by
             function() {
                 var deferred = Ext.create('Deft.Deferred');
@@ -464,6 +478,7 @@ Ext.define('CustomApp', {
         this.trendChartUpdateProcess.then({
             success: function(snapshotSeriesData) {
                 this.snapshotSeriesData = snapshotSeriesData;
+                Ext.getCmp('trendChartContainer').setLoading(false);
                 this._drawActiveChart();
             },
             scope: this
