@@ -1,0 +1,33 @@
+.icon-btn .x-btn-inner {
+	padding: 0 !important;
+	font-size: 17px !important;
+}
+
+.x-btn-default-small {
+	background-color: #00A9E0;
+}
+
+#activeFeatureInfoContainer {
+	line-height: 34px;
+	color: #666;
+	font-size: 14px;
+	font-weight: bold;
+	font-style: italic;
+}
+
+.x-column-header-sort-ASC,
+.x-column-header-sort-DESC {
+	background: transparent !important;
+}
+
+.x-grid-group-title {
+	color: #666;
+}
+
+.x-grid-group-hd {
+	border-color: #888;
+}
+
+.x-grid-row-summary {
+	display: none;
+}
