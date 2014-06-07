@@ -187,7 +187,7 @@ Ext.define('CustomApp', {
                     items  : [{
                         region : 'north',
                         layout : 'hbox',
-                        height : 450,
+                        height : 400,
                         items  : [{
                             xtype  : 'container',
                             id     : 'gridContainer',
@@ -199,7 +199,7 @@ Ext.define('CustomApp', {
                                 xtype             : 'rallygrid',
                                 id                : 'rallygrid',
                                 showPagingToolbar : false,
-                                height            : 450,
+                                height            : 400,
                                 features          : [{
                                     ftype          : 'groupingsummary',
                                     groupHeaderTpl : '{name} ({rows.length} User Stor{[values.rows.length > 1 ? "ies" : "y"]})',
@@ -443,12 +443,12 @@ Ext.define('CustomApp', {
                             fetch   : ['Name','PlanEstimate','ScheduleState'],
                             hydrate : ['ScheduleState'],
                             find    : {
-                                '__At'           : Rally.util.DateTime.toIsoString(queryDate),
-                                '_TypeHierarchy' : 'HierarchicalRequirement',
-                                'Children'       : null,
                                 'Iteration'      : {
                                     '$in' : iterationConfig.OIDs
-                                }
+                                },
+                                '__At'           : Rally.util.DateTime.toIsoString(queryDate),
+                                '_TypeHierarchy' : 'HierarchicalRequirement',
+                                'Children'       : null
                             }
                         }).load({
                             params : {
@@ -489,15 +489,20 @@ Ext.define('CustomApp', {
         var chartConfigRenderFns = [
             //Cummulative Flow
             function(snapshotSeriesData) {
+                debugger;
                 return {
                     data : {
                         series : _.map(['Initial Version','Defined','In-Progress','Completed','Accepted'], function(scheduleState) {
                             return {
                                 name : scheduleState,
                                 data : _.map(snapshotSeriesData, function(snapshotGroup) {
-                                    return _.reduce(snapshotGroup.records, function(sum, record) {
-                                        return sum + (record.get('ScheduleState') === scheduleState) ? record.get('PlanEstimate') || 0 : 0;
-                                    }, 0);
+                                    return Ext.Array.sum(_.map(snapshotGroup.records, function(record) {
+                                        if (record.get('ScheduleState') === scheduleState) {
+                                            return record.get('PlanEstimate') || 0;
+                                        } else {
+                                            return 0;
+                                        }
+                                    }));
                                 })
                             };
                         })

@@ -116,6 +116,7 @@
 						point: {
 							events: {
 								click: function(e) {
+									debugger;
 									if (this._ref) {
 										self.fireEvent('iterationselected', this.name);
 									}
