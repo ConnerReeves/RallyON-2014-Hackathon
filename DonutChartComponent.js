@@ -80,9 +80,9 @@
 				series: [
 					{
 						type:'pie',
-						name: 'Story Count',
+						name: 'Iteration',
 						data: '',
-						size: '80%',
+						size: '90%',
 						dataLabels:
 						{
 							distance: 25,
@@ -97,8 +97,8 @@
 						type:'pie',
 						name: 'Stories, etc.',
 						data: '',
-						size: '70%',
-						innerSize: '85%',
+						size: '90%',
+						innerSize: '80%',
 						dataLabels: { enabled: false }
 					}
 				],

@@ -65,7 +65,7 @@
 		},
 
 		_addStoryWithIteration: function(result, row) {
-			if (row.Iteration in result) {
+			if (row.Iteration._ref in result) {
 				result[row.Iteration._ref].y += 1;
 			} else {
 				var map = {
