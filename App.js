@@ -61,7 +61,7 @@ Ext.define('CustomApp', {
                                 text: '<span class="icon-plus icon-large"></span> Add Features',
                                 handler: function() {
                                     Ext.create('Rally.ui.dialog.ChooserDialog', {
-                                        title               : 'Choose Features to Add', 
+                                        title               : 'Choose Features to Add',
                                         selectionButtonText : 'Save',
                                         artifactTypes       : ['portfolioItem/Feature'],
                                         autoShow            : true,
@@ -113,7 +113,7 @@ Ext.define('CustomApp', {
                                 text: '<span class="icon-minus icon-large"></span> Remove Features',
                                 handler: function() {
                                     Ext.create('Rally.ui.dialog.ChooserDialog', {
-                                        title               : 'Choose Features to Remove', 
+                                        title               : 'Choose Features to Remove',
                                         selectionButtonText : 'Save',
                                         artifactTypes       : ['portfolioItem/Feature'],
                                         autoShow            : true,
@@ -170,7 +170,7 @@ Ext.define('CustomApp', {
                                         }
                                     });
                                 },
-                                scope: this                   
+                                scope: this
                             }]
                         }
                     }]
@@ -224,10 +224,8 @@ Ext.define('CustomApp', {
                                 }]
                             }]
                         },{
-                            xtype : 'container',
-                            id    : 'radialContainer',
-                            flex  : 1,
-                            html  : 'Radial goes here...'
+                            xtype : 'donutchart',
+                            id    : 'donut-chart-container'
                         }]
                     },{
                         region: 'center',
@@ -288,7 +286,7 @@ Ext.define('CustomApp', {
 
         //Reinitialize UI components
         Ext.getCmp('rallygrid').store.removeAll();
-        
+
         if (activeFeatureRecord) {
             this.activeFeatureUpdateProcess = Deft.Chain.pipeline([
                 function() {
