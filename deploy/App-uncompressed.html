@@ -293,17 +293,17 @@
     _updateActiveFeature: function() {
         if (this.activeFeatureUpdateProcess && this.activeFeatureUpdateProcess.getState() === 'pending') this.activeFeatureUpdateProcess.cancel();
 
-        var activeFeatureRecord = this.selectedFeatures[Math.abs(this.activeFeatureIndex) % this.selectedFeatures.length];
+        this.activeFeatureData = this.selectedFeatures[Math.abs(this.activeFeatureIndex) % this.selectedFeatures.length];
 
         //Reinitialize UI components
         Ext.getCmp('rallygrid').store.removeAll();
         
-        if (activeFeatureRecord) {
+        if (this.activeFeatureData) {
             this.activeFeatureUpdateProcess = Deft.Chain.pipeline([
+                //Update UI components
                 function() {
-                    //Display active Feature details
                     Ext.getCmp('rallygrid').setLoading(true);
-                    Ext.getCmp('activeFeatureInfoContainer').update(Ext.String.format('{0}: {1}', activeFeatureRecord.FormattedID, activeFeatureRecord.Name));
+                    Ext.getCmp('activeFeatureInfoContainer').update(Ext.String.format('{0}: {1}', this.activeFeatureData.FormattedID, this.activeFeatureData.Name));
                 },
 
                 function() {
@@ -321,7 +321,7 @@
                         ],
                         filters    : [{
                             property : 'Feature.ObjectID',
-                            value    : activeFeatureRecord.ObjectID
+                            value    : this.activeFeatureData.ObjectID
                         },{
                             property : 'DirectChildrenCount',
                             value    : 0
@@ -370,6 +370,120 @@
                 });
             }
         });
+    },
+
+    _updateTrendCharts: function(iterationName) {
+        if (this.trendChartUpdateProcess && this.trendChartUpdateProcess.getState() === 'pending') this.trendChartUpdateProcess.cancel();
+
+        this.trendChartUpdateProcess = Deft.Chain.pipeline([
+            //Get the iteration OIDs to filter by
+            function() {
+                var deferred = Ext.create('Deft.Deferred');
+                
+                var projectNameFilters = _.map(Ext.getCmp('rallygrid').store.groups.keys, function(groupName) {
+                    return {
+                        property : 'Project.Name',
+                        value    : groupName
+                    };
+                });
+
+                Ext.create('Rally.data.WsapiDataStore', {
+                    limit   : Infinity,
+                    model   : 'Iteration',
+                    fetch   : ['ObjectID','StartDate','EndDate'],
+                    filters : [{
+                        property : 'Name',
+                        value    : iterationName
+                    },{
+                        property : 'StartDate',
+                        operator : '!=',
+                        value    : null
+                    },{
+                        property : 'EndDate',
+                        operator : '!=',
+                        value    : null
+                    }, Rally.data.QueryFilter.or(projectNameFilters)]
+                }).load({
+                    callback : function(records, operation, success) {
+                        var data = _.pluck(records, 'data');
+
+                        var queryDate  = _.min(_.pluck(data, 'StartDate'));
+                        var maxDate    = _.max(_.pluck(data, 'EndDate'));
+                        var queryDates = [];
+
+                        while (queryDate <= maxDate) {
+                            queryDates.push(queryDate);
+                            queryDate = Ext.Date.add(queryDate, Ext.Date.DAY, 1);
+                        }
+
+                        deferred.resolve({
+                            OIDs       : _.pluck(data, 'ObjectID'),
+                            queryDates : queryDates
+                        });
+                    }
+                });
+                return deferred.promise;
+            },
+
+            function(iterationConfig) {
+                var deferred = Ext.create('Deft.Deferred');
+                
+                Deft.Promise.all(_.map(iterationConfig.queryDates, function(queryDate) {
+                    return function() {
+                        var deferred = Ext.create('Deft.Deferred');
+                        Ext.create('Rally.data.lookback.SnapshotStore', {
+                            autoLoad: true,
+                            listeners: {
+                                load: function(store, data, success) {
+                                    debugger;
+                                }
+                            },
+                            fetch: ['Name', 'ScheduleState'],
+                            find: [
+                                {
+                                    property: '_TypeHierarchy',
+                                    operator: 'in',
+                                    value: ['Defect', 'HierarchicalRequirement']
+                                }
+                            ]
+                        });
+                        // Ext.create('Rally.data.lookback.SnapshotStore', {
+                        //     limit   : Infinity,
+                        //     fetch   : ['Name'],
+                        //     filters : [{
+                        //         property : '__At',
+                        //         value    : Rally.util.DateTime.toIsoString(queryDate)
+                        //     },{
+                        //         property : '_TypeHierarchy',
+                        //         value    : 'HierarchicalRequirement'
+                        //     },{
+                        //         property : 'Children',
+                        //         value    : null
+                        //     },{
+                        //         property : 'Iteration',
+                        //         operator : 'in',
+                        //         value    : iterationConfig.OIDs
+                        //     }]
+                        // }).load({
+                        //     params : {
+                        //         compress                    : true,
+                        //         removeUnauthorizedSnapshots : true
+                        //     },
+                        //     callback : function(records, operation, success) {
+                        //         deferred.resolve(records);
+                        //     }
+                        // });
+                        return deferred.promise;
+                    }();
+                })).then({
+                    success: function(out) {
+                        console.log(out);
+                    }
+                });
+
+                return deferred.promise;
+            }
+        ], this);
     }
 });
 
@@ -383,7 +497,10 @@
 
 
     <style type="text/css">
-        .icon-btn .x-btn-inner {
+        .app {
+  overflow: hidden !important;
+}
+.icon-btn .x-btn-inner {
   padding: 0 !important;
   font-size: 17px !important;
 }

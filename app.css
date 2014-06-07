@@ -1,3 +1,7 @@
+.app {
+	overflow: hidden !important;
+}
+
 .icon-btn .x-btn-inner {
 	padding: 0 !important;
 	font-size: 17px !important;

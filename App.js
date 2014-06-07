@@ -5,6 +5,8 @@ Ext.define('CustomApp', {
     activeFeatureIndex : 0,
     selectedFeatures   : [],
 
+    activeChartIndex : 0,
+
     layout: 'border',
     launch: function() {
         //Reload process
@@ -226,12 +228,11 @@ Ext.define('CustomApp', {
                         },{
                             xtype : 'container',
                             id    : 'radialContainer',
-                            flex  : 1,
-                            html  : 'Radial goes here...'
+                            flex  : 1
                         }]
                     },{
                         region: 'center',
-                        html: 'Charts go here...'
+                        id: 'trendChartContainer'
                     }]
                 }]);
             },
@@ -284,17 +285,17 @@ Ext.define('CustomApp', {
     _updateActiveFeature: function() {
         if (this.activeFeatureUpdateProcess && this.activeFeatureUpdateProcess.getState() === 'pending') this.activeFeatureUpdateProcess.cancel();
 
-        var activeFeatureRecord = this.selectedFeatures[Math.abs(this.activeFeatureIndex) % this.selectedFeatures.length];
+        this.activeFeatureData = this.selectedFeatures[Math.abs(this.activeFeatureIndex) % this.selectedFeatures.length];
 
         //Reinitialize UI components
         Ext.getCmp('rallygrid').store.removeAll();
         
-        if (activeFeatureRecord) {
+        if (this.activeFeatureData) {
             this.activeFeatureUpdateProcess = Deft.Chain.pipeline([
+                //Update UI components
                 function() {
-                    //Display active Feature details
                     Ext.getCmp('rallygrid').setLoading(true);
-                    Ext.getCmp('activeFeatureInfoContainer').update(Ext.String.format('{0}: {1}', activeFeatureRecord.FormattedID, activeFeatureRecord.Name));
+                    Ext.getCmp('activeFeatureInfoContainer').update(Ext.String.format('{0}: {1}', this.activeFeatureData.FormattedID, this.activeFeatureData.Name));
                 },
 
                 function() {
@@ -312,7 +313,7 @@ Ext.define('CustomApp', {
                         ],
                         filters    : [{
                             property : 'Feature.ObjectID',
-                            value    : activeFeatureRecord.ObjectID
+                            value    : this.activeFeatureData.ObjectID
                         },{
                             property : 'DirectChildrenCount',
                             value    : 0
@@ -359,6 +360,195 @@ Ext.define('CustomApp', {
                     message  : 'Settings saved successfully.',
                     duration : 2500
                 });
+            }
+        });
+    },
+
+    _updateTrendCharts: function(iterationName) {
+        if (this.trendChartUpdateProcess && this.trendChartUpdateProcess.getState() === 'pending') this.trendChartUpdateProcess.cancel();
+
+        this.trendChartUpdateProcess = Deft.Chain.pipeline([
+            //Get the iteration OIDs to filter by
+            function() {
+                var deferred = Ext.create('Deft.Deferred');
+                
+                var projectNameFilters = _.map(Ext.getCmp('rallygrid').store.groups.keys, function(groupName) {
+                    return {
+                        property : 'Project.Name',
+                        value    : groupName
+                    };
+                });
+
+                Ext.create('Rally.data.WsapiDataStore', {
+                    limit   : Infinity,
+                    model   : 'Iteration',
+                    fetch   : ['ObjectID','StartDate','EndDate'],
+                    filters : [{
+                        property : 'Name',
+                        value    : iterationName
+                    },{
+                        property : 'StartDate',
+                        operator : '!=',
+                        value    : null
+                    },{
+                        property : 'EndDate',
+                        operator : '!=',
+                        value    : null
+                    }, Rally.data.QueryFilter.or(projectNameFilters)]
+                }).load({
+                    callback : function(records, operation, success) {
+                        var data = _.pluck(records, 'data');
+
+                        var queryDate  = _.min(_.pluck(data, 'StartDate'));
+                        var maxDate    = _.max(_.pluck(data, 'EndDate'));
+                        var queryDates = [];
+
+                        while (queryDate <= maxDate) {
+                            queryDates.push(queryDate);
+                            queryDate = Ext.Date.add(queryDate, Ext.Date.DAY, 1);
+                        }
+
+                        deferred.resolve({
+                            OIDs       : _.pluck(data, 'ObjectID'),
+                            queryDates : queryDates
+                        });
+                    }
+                });
+                return deferred.promise;
+            },
+
+            function(iterationConfig) {
+                var deferred = Ext.create('Deft.Deferred');
+                
+                Deft.Promise.all(_.map(iterationConfig.queryDates, function(queryDate) {
+                    return function() {
+                        var deferred = Ext.create('Deft.Deferred');
+                        Ext.create('Rally.data.lookback.SnapshotStore', {
+                            limit   : Infinity,
+                            fetch   : ['Name','PlanEstimate','ScheduleState'],
+                            hydrate : ['ScheduleState'],
+                            find    : {
+                                '__At'           : Rally.util.DateTime.toIsoString(queryDate),
+                                '_TypeHierarchy' : 'HierarchicalRequirement',
+                                'Children'       : null,
+                                'Iteration'      : {
+                                    '$in' : iterationConfig.OIDs
+                                }
+                            }
+                        }).load({
+                            params : {
+                                compress                    : true,
+                                removeUnauthorizedSnapshots : true
+                            },
+                            callback : function(records, operation, success) {
+                                deferred.resolve({
+                                    date    : Ext.Date.format(queryDate, 'Y-m-d'),
+                                    records : records
+                                });
+                            }
+                        });
+                        return deferred.promise;
+                    }();
+                })).then({
+                    success: function(snapshotSeriesData) {
+                        deferred.resolve(snapshotSeriesData);
+                    },
+                    scope: this
+                });
+
+                return deferred.promise;
+            }
+        ], this);
+
+        this.trendChartUpdateProcess.then({
+            success: function(snapshotSeriesData) {
+                this.snapshotSeriesData = snapshotSeriesData;
+                this._drawActiveChart();
+            },
+            scope: this
+        });
+    },
+
+    _drawActiveChart: function() {
+        var chartConfigRenderFns = [
+            //Cummulative Flow
+            function(snapshotSeriesData) {
+                return {
+                    data : {
+                        series : _.map(['Initial Version','Defined','In-Progress','Completed','Accepted'], function(scheduleState) {
+                            return {
+                                name : scheduleState,
+                                data : _.map(snapshotSeriesData, function(snapshotGroup) {
+                                    return _.reduce(snapshotGroup.records, function(sum, record) {
+                                        return sum + (record.get('ScheduleState') === scheduleState) ? record.get('PlanEstimate') || 0 : 0;
+                                    }, 0);
+                                })
+                            };
+                        })
+                    },
+                    config : {
+                        chart : {
+                            type   : 'area',
+                            height : Ext.getCmp('trendChartContainer').getHeight()
+                        },
+                        title: {
+                            text : ''
+                        },
+                        xAxis: [{
+                            categories : _.pluck(snapshotSeriesData, 'date'),
+                            labels: {
+                                rotation: -45,
+                                y: 15
+                            }
+                        }],
+                        yAxis : {
+                            title : {
+                                text : 'Plan Estimate Total'
+                            }
+                        },
+                        legend : {
+                            verticalAlign : 'bottom',
+                            align         : 'center',
+                            padding       : 5
+                        },
+                        tooltip : {
+                            shared        : true,
+                            useHTML       : true,
+                            followPointer : true,
+                            formatter     : function() {
+                                var lineItem = this;
+                                var stackTotal = 0;
+                                var tooltipHTML = '<table>';
+                                Ext.Array.each(lineItem.points, function(point) {
+                                    tooltipHTML += '<tr style="font-size:10px;"><td width="33%" style="padding:0;text-align:right;color:' + point.series.color + ';">' + point.series.name + ':</td><td width="33%" style="text-align:center;padding:0 0 0 5px;"><b>(' + Ext.util.Format.number(point.point.y, '0,0') + ')<b></td><td width="33%" style="text-align:center;padding:0 0 0 5px;"><b>' + (parseInt(point.point.percentage * 100, 10) / 100) + '%</b></td></tr>';
+                                    stackTotal  += parseInt(point.point.y, 10) || 0;
+                                });
+                                tooltipHTML += '<tr style="border-top:1px solid black;font-size:10px;"><td width="33%" style="padding:0;text-align:right;"><b><i>Total:</i></b></td><td width="33%" style="text-align:center;padding:0 0 0 5px;"><b>(' + Ext.util.Format.number(stackTotal, '0,0') + ')<b></td><td width="33%" style="text-align:center;padding:0 0 0 5px;"><b>100%</b></td></tr>';
+                                tooltipHTML += '</table>';
+                                return tooltipHTML;
+                            }
+                        },
+                        plotOptions: {
+                            area: {
+                                stacking: 'normal'
+                            }
+                        }
+                    }
+                };
+            }
+        ];
+
+        var chart = chartConfigRenderFns[Math.abs(this.activeChartIndex) % chartConfigRenderFns.length](this.snapshotSeriesData);
+
+        Ext.getCmp('trendChartContainer').removeAll();
+        Ext.getCmp('trendChartContainer').add({
+            xtype       : 'rallychart',
+            chartData   : chart.data,
+            chartConfig : chart.config,
+            listeners   : {
+                afterrender : function() {
+                    this.unmask();
+                }
             }
         });
     }
