@@ -51,16 +51,10 @@
 		_transformToIterations: function(data) {
 			var self = this;
 			var iterationMap = _.reduce(data, function(result, row, index) {
-				if (row.Iteration in result) {
-					result[row.Iteration._ref].y += 1;
+				if (row.Iteration) {
+					self._addStoryWithIteration(result, row);
 				} else {
-					var map = {
-						_ref: row.Iteration._ref,
-						name: row.Iteration.Name,
-						y: 1,
-						color: self.colors.lightGrey
-					};
-					result[row.Iteration._ref] = map;
+					self._addStoryWithoutIteration(result, row);
 				}
 				return result;
 			}, {});
@@ -68,6 +62,34 @@
 			return _.map(iterationMap, function(row) {
 				return row;
 			});
+		},
+
+		_addStoryWithIteration: function(result, row) {
+			if (row.Iteration in result) {
+				result[row.Iteration._ref].y += 1;
+			} else {
+				var map = {
+					_ref: row.Iteration._ref,
+					name: row.Iteration.Name,
+					y: 1,
+					color: '#E6E6E6'
+				};
+				result[row.Iteration._ref] = map;
+			}
+		},
+
+		_addStoryWithoutIteration: function(result, row) {
+			var name = 'None';
+			if (name in result) {
+				result[name].y += 1;
+			} else {
+				var map = {
+					name: name,
+					y: 1,
+					color: '#E6E6E6'
+				};
+				result[name] = map;
+			}
 		},
 
 		_transformToStories: function(data) {

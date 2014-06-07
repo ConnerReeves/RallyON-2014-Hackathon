@@ -16,7 +16,13 @@
 		},
 
 		update: function(store) {
+			this._ensureEmptyComponent();
 			this._onQueryComplete(store, null, null);
+		},
+
+		_ensureEmptyComponent: function() {
+			var chartElem = $('#' + this.getChartElemId());
+			chartElem.find('.highcharts-container').remove();
 		},
 
 		query: function() {
