@@ -4,14 +4,19 @@
 		alias: "widget.donutchart",
 		flex: 1,
 		config: {
-			chartElemId: 'donut-chart'
+			chartElemId: 'donut-chart',
+			portfolioItemOid: null
 		},
 
 		html: '<div id="donut-chart"></div>',
 
 		initComponent: function() {
 			this.callParent(arguments);
-			this.query();
+			// this.query();
+		},
+
+		update: function(store) {
+			this._onQueryComplete(store, null, null);
 		},
 
 		query: function() {
@@ -28,7 +33,7 @@
 			return {
 				find: {
 					'_TypeHierarchy': { $in : [ 'Defect', 'HierarchicalRequirement' ] },
-					'_ItemHierarchy': 15669225377,
+					'_ItemHierarchy': this.getPortfolioItemOid(),
 					'__At': 'current'
 				},
 				fetch: ['ScheduleState', 'PlanEstimate', 'ObjectID', 'FormattedID', 'Name', 'Iteration'],

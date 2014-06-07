@@ -52,17 +52,15 @@
 			var self = this;
 			var iterationMap = _.reduce(data, function(result, row, index) {
 				if (row.Iteration in result) {
-					result[row.Iteration].y += 1;
+					result[row.Iteration._ref].y += 1;
 				} else {
-					var iterationNum = (_.size(result) + 1);
 					var map = {
-						_ref: '/iteration/' + iterationNum,
-						ObjectID: row.Iteration,
-						name: 'Iteration ' + iterationNum,
+						_ref: row.Iteration._ref,
+						name: row.Iteration.Name,
 						y: 1,
 						color: self.colors.lightGrey
 					};
-					result[row.Iteration] = map;
+					result[row.Iteration._ref] = map;
 				}
 				return result;
 			}, {});

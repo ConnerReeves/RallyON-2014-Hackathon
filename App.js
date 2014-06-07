@@ -227,7 +227,7 @@ Ext.define('CustomApp', {
                             }]
                         },{
                             xtype : 'donutchart',
-                            id    : 'donut-chart-container'
+                            id    : 'donut-chart-component'
                         }]
                     },{
                         region: 'center',
@@ -288,7 +288,7 @@ Ext.define('CustomApp', {
 
         //Reinitialize UI components
         Ext.getCmp('rallygrid').store.removeAll();
-        
+
         if (this.activeFeatureData) {
             this.activeFeatureUpdateProcess = Deft.Chain.pipeline([
                 //Update UI components
@@ -332,8 +332,10 @@ Ext.define('CustomApp', {
 
             this.activeFeatureUpdateProcess.then({
                 success: function(store) {
-                    //Update Grid
+                    // Update Grid
                     Ext.getCmp('rallygrid').bindStore(store);
+                    // Update donut chart
+                    Ext.getCmp('donut-chart-component').update(store);
                 },
                 scope: this
             }).always(function() {
@@ -370,7 +372,7 @@ Ext.define('CustomApp', {
             //Get the iteration OIDs to filter by
             function() {
                 var deferred = Ext.create('Deft.Deferred');
-                
+
                 var projectNameFilters = _.map(Ext.getCmp('rallygrid').store.groups.keys, function(groupName) {
                     return {
                         property : 'Project.Name',
@@ -418,7 +420,7 @@ Ext.define('CustomApp', {
 
             function(iterationConfig) {
                 var deferred = Ext.create('Deft.Deferred');
-                
+
                 Deft.Promise.all(_.map(iterationConfig.queryDates, function(queryDate) {
                     return function() {
                         var deferred = Ext.create('Deft.Deferred');
