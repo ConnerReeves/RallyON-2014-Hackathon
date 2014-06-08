@@ -600,8 +600,6 @@ Ext.define('CustomApp', {
 
         var chart = chartConfigRenderFns[Math.abs(this.activeChartIndex) % chartConfigRenderFns.length](this.snapshotSeriesData);
 
-        debugger;
-
         Ext.getCmp('trendChartContainer').removeAll();
         Ext.getCmp('trendChartContainer').add({
             xtype       : 'rallychart',
