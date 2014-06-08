@@ -76,8 +76,9 @@
 		},
 
 		_addStoryWithIteration: function(result, row) {
-			if (row.Iteration._ref in result) {
-				result[row.Iteration._ref].y += 1;
+			var iterationKey = row.Iteration.Name;
+			if (iterationKey in result) {
+				result[iterationKey].y += 1;
 			} else {
 				var map = {
 					_ref: row.Iteration._ref,
@@ -85,7 +86,7 @@
 					y: 1,
 					color: '#E6E6E6'
 				};
-				result[row.Iteration._ref] = map;
+				result[iterationKey] = map;
 			}
 		},
 
