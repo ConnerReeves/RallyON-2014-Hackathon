@@ -418,8 +418,8 @@ Ext.define('CustomApp', {
                     callback : function(records, operation, success) {
                         var data = _.pluck(records, 'data');
 
-                        var queryDate  = _.min(_.pluck(data, 'StartDate'));
-                        var maxDate    = _.max(_.pluck(data, 'EndDate'));
+                        var queryDate  = Ext.Date.add(_.min(_.pluck(data, 'StartDate')), Ext.Date.DAY, -2);
+                        var maxDate    = Ext.Date.add(_.max(_.pluck(data, 'EndDate')), Ext.Date.DAY, 6);
                         var queryDates = [];
 
                         while (queryDate <= maxDate) {
@@ -512,8 +512,9 @@ Ext.define('CustomApp', {
                     },
                     config : {
                         chart : {
-                            type   : 'area',
-                            height : Ext.getCmp('trendChartContainer').getHeight()
+                            type       : 'area',
+                            height     : Ext.getCmp('trendChartContainer').getHeight(),
+                            spacingTop : 10
                         },
                         title: {
                             text : ''
@@ -523,7 +524,42 @@ Ext.define('CustomApp', {
                             labels: {
                                 rotation: -45,
                                 y: 15
-                            }
+                            },
+                            plotLines : [{
+                                color     : '#666',
+                                width     : 2,
+                                dashStyle : 'ShortDash',
+                                value     : 2,
+                                zIndex    : 100,
+                                label     : {
+                                    text          : 'Iteration Start',
+                                    verticalAlign : 'top',
+                                    textAlign     : 'left',
+                                    x             : 4,
+                                    y             : 3,
+                                    style         : {
+                                        color      : '#666',
+                                        fontWeight : 'bold'
+                                    }
+                                }
+                            },{
+                                color     : '#666',
+                                width     : 2,
+                                dashStyle : 'ShortDash',
+                                value     : snapshotSeriesData.length - 7,
+                                zIndex    : 100,
+                                label     : {
+                                    text          : 'Iteration End',
+                                    verticalAlign : 'top',
+                                    textAlign     : 'left',
+                                    x             : 4,
+                                    y             : 3,
+                                    style         : {
+                                        color      : '#666',
+                                        fontWeight : 'bold'
+                                    }
+                                }
+                            }]
                         }],
                         yAxis : {
                             title : {
@@ -563,6 +599,8 @@ Ext.define('CustomApp', {
         ];
 
         var chart = chartConfigRenderFns[Math.abs(this.activeChartIndex) % chartConfigRenderFns.length](this.snapshotSeriesData);
+
+        debugger;
 
         Ext.getCmp('trendChartContainer').removeAll();
         Ext.getCmp('trendChartContainer').add({

@@ -21,7 +21,7 @@
 			});
 
 			// Sort by iteration name, none comes at the end
-			_.sortBy(data, function(story) {
+			data = _.sortBy(data, function(story) {
 				if (story.Iteration) {
 					return story.Iteration.Name;
 				} else {
