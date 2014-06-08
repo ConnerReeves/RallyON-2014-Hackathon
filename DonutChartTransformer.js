@@ -41,12 +41,12 @@
 			var colors = Ext.create('ChartColors');
 			this.colors = colors;
 			this.stateColors = {
-				'Defined': colors.lightBlue,
-				'In-Progress': colors.lightBlue,
-				'Completed': colors.lightBlue,
-				'Accepted': colors.lightGreen,
-				'Released': colors.lightGreen,
-				'__default__': colors.lightGrey
+				'Initial Version' : colors.lightBlue,
+				'Defined'         : colors.lightBlue,
+				'In-Progress'     : colors.lightBlue,
+				'Completed'       : colors.lightBlue,
+				'Accepted'        : colors.lightGreen,
+				'__default__'     : colors.lightGrey
 			};
 		},
 

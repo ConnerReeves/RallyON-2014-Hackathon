@@ -70,12 +70,11 @@
 			var self = this;
 			return {
 				type: 'pie',
-				title: { text: 'Feature Donut' },
+				title: { text: '' },
 				subtitle: {
 					useHTML: true,
 					text: '<span class="donut-state-legend donut-active-state-legend"></span><span class="donut-legend-label">Active</span> \
-					<span class="donut-state-legend donut-done-state-legend"></span><span class="donut-legend-label">Done</span>',
-					y: 40
+					<span class="donut-state-legend donut-done-state-legend"></span><span class="donut-legend-label">Done</span>'
 				},
 				credits: { enabled: false },
 				colors: [
@@ -86,6 +85,7 @@
 						name: 'Iteration',
 						data: '',
 						size: '90%',
+						innerSize: '30%',
 						dataLabels:
 						{
 							distance: 25,

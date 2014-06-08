@@ -199,6 +199,7 @@ Ext.define('CustomApp', {
                                 xtype             : 'rallygrid',
                                 id                : 'rallygrid',
                                 showPagingToolbar : false,
+                                hidden            : true,
                                 height            : 400,
                                 features          : [{
                                     ftype          : 'groupingsummary',
@@ -292,12 +293,14 @@ Ext.define('CustomApp', {
 
         //Reinitialize UI components
         Ext.getCmp('rallygrid').store.removeAll();
+        Ext.getCmp('trendChartContainer').removeAll();
+        Ext.getCmp('donut-chart-component')._ensureEmptyComponent();
 
         if (this.activeFeatureData) {
             this.activeFeatureUpdateProcess = Deft.Chain.pipeline([
                 //Update UI components
                 function() {
-                    Ext.getCmp('rallygrid').setLoading(true);
+                    Ext.getCmp('gridContainer').setLoading(true);
                     Ext.getCmp('activeFeatureInfoContainer').update(Ext.String.format('{0}: {1}', this.activeFeatureData.FormattedID, this.activeFeatureData.Name));
                 },
 
@@ -337,17 +340,18 @@ Ext.define('CustomApp', {
             this.activeFeatureUpdateProcess.then({
                 success: function(store) {
                     // Update Grid
+                    Ext.getCmp('rallygrid').show();
                     Ext.getCmp('rallygrid').bindStore(store);
                     // Update donut chart
                     Ext.getCmp('donut-chart-component').update(store);
                 },
                 scope: this
             }).always(function() {
-                Ext.getCmp('rallygrid').setLoading(false);
+                Ext.getCmp('gridContainer').setLoading(false);
             });
         } else {
             Ext.getCmp('activeFeatureInfoContainer').update('Add Features...');
-            Ext.getCmp('rallygrid').setLoading(false);
+            Ext.getCmp('gridContainer').setLoading(false);
         }
     },
 
@@ -489,7 +493,6 @@ Ext.define('CustomApp', {
         var chartConfigRenderFns = [
             //Cummulative Flow
             function(snapshotSeriesData) {
-                debugger;
                 return {
                     data : {
                         series : _.map(['Initial Version','Defined','In-Progress','Completed','Accepted'], function(scheduleState) {
