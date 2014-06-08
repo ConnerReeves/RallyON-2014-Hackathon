@@ -564,7 +564,8 @@ Ext.define('CustomApp', {
                         yAxis : {
                             title : {
                                 text : 'Plan Estimate Total'
-                            }
+                            },
+                            maxPadding : 0.35
                         },
                         legend : {
                             verticalAlign : 'bottom',
