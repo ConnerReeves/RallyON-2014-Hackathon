@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/connerreeves/rallyon-2014-hackathon.png?label=ready&title=Ready)](https://waffle.io/connerreeves/rallyon-2014-hackathon)
 Backlog Analyzer v2
 =========================
 
